@@ -1,0 +1,9 @@
+- Lives
+- Destructible objects
+- Camera shake
+- Pickups
+    + Flip direction
+    + Add lives
+- Increase difficulty
+    + speed
+    + decrease obstacle distance
