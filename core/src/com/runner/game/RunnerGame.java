@@ -41,6 +41,8 @@ public class RunnerGame extends ScreenAdapter {
 
     private float playTime;
 
+    private Destructable destructable;
+
 	private enum State {
         Playing,
         GameOver
@@ -66,6 +68,8 @@ public class RunnerGame extends ScreenAdapter {
 		cloudManager = new CloudManager(WORLD_WIDTH, WORLD_HEIGHT);
 
         bitmapFont = new BitmapFont();
+
+        destructable = new Destructable();
 
 	}
 
@@ -94,6 +98,8 @@ public class RunnerGame extends ScreenAdapter {
             obs.renderDebug(shapeRenderer);
         }
 
+
+        destructable.renderDebug(shapeRenderer);
 		shapeRenderer.end();
 
 		// do line stuff
@@ -134,7 +140,9 @@ public class RunnerGame extends ScreenAdapter {
 
             checkIfNewObstacleCanBeAdded();
             checkIsObstacleGoneOffScreen();
-            checkForObstacleCollision();
+            //checkForObstacleCollision();
+
+            destructable.update(delta);
         }
         else if (currentGameState == State.GameOver)
         {

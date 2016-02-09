@@ -5,17 +5,20 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 
 /**
  * Created by William on 06/02/2016.
  */
 public class Player {
 
-    private float x = 30;
-    private float y = 10;
+    //private float x = 30;
+    //private float y = 10;
 
-    private float legAxa = x + 2;
-    private float legBxa = x + 13;
+    private Vector2 position = new Vector2(30, 10);
+
+    private float legAxa = position.x + 2;
+    private float legBxa = position.x + 13;
 
     private float legAxb = legAxa + 2;
     private float legBxb = legBxa - 2;
@@ -24,8 +27,10 @@ public class Player {
     private float legB = legBxa;
 
     private boolean canJump = true;
-    private final float gravity = -300f;
-    private float yVelocity = 0;
+    //private final float gravity = -300f;
+    private Vector2 gravity = new Vector2(0, -300f);
+    // private float yVelocity = 0;
+    private Vector2 jumpVelocity = Vector2.Zero;
 
     private Rectangle collisionRectangle;
 
@@ -40,7 +45,7 @@ public class Player {
     public Player(float floor) {
 
         this.floor = floor + 1;
-        collisionRectangle = new Rectangle(x, y, playerWidth, playerHeight + 20);
+        collisionRectangle = new Rectangle(position.x, position.y, playerWidth, playerHeight + 20);
     }
 
     public Rectangle getCollisionRectangle() {
@@ -52,15 +57,20 @@ public class Player {
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE))
             jump();
 
-        y += yVelocity * delta;
-        yVelocity += gravity * delta;
 
-        collisionRectangle.setY(y);
+        jumpVelocity.mulAdd(gravity, delta);
+        position.mulAdd(jumpVelocity, delta);
 
-        if (y <= floor)
+
+        //y += yVelocity * delta;
+        //yVelocity += gravity * delta;
+
+        collisionRectangle.setY(position.y);
+
+        if (position.y <= floor)
         {
-            yVelocity = 0;
-            y = floor;
+            jumpVelocity = Vector2.Zero;
+            position.y = floor;
             canJump = true;
         }
 
@@ -95,15 +105,15 @@ public class Player {
     {
         shapeRenderer.setColor(Color.CYAN);
         // head
-        shapeRenderer.rect(x, y + 50, playerWidth, 20);
+        shapeRenderer.rect(position.x, position.y + 50, playerWidth, 20);
 
         // torso
-        shapeRenderer.rect(x, y + 20, playerWidth, playerHeight - 20);
-        shapeRenderer.rect(x, y + 20, playerWidth, playerHeight - 20);
+        shapeRenderer.rect(position.x, position.y + 20, playerWidth, playerHeight - 20);
+        shapeRenderer.rect(position.x, position.y + 20, playerWidth, playerHeight - 20);
 
         // legs
-        shapeRenderer.rect(legA, y, 5, 20); // leg a
-        shapeRenderer.rect(legB, y, 5, 20); // leg b
+        shapeRenderer.rect(legA, position.y, 5, 20); // leg a
+        shapeRenderer.rect(legB, position.y, 5, 20); // leg b
 
 
         // collision rect
@@ -116,7 +126,7 @@ public class Player {
         // System.out.println("jump");
         if (canJump)
         {
-            yVelocity = 200f;
+            jumpVelocity = new Vector2(0, 200f);
             canJump = false;
         }
 
