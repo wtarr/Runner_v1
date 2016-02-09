@@ -14,106 +14,116 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import java.util.ArrayList;
+
 public class RunnerGame extends ScreenAdapter {
-	SpriteBatch batch;
-	Texture img;
+    SpriteBatch batch;
+    Texture img;
 
 
-	private Viewport viewport;
-	private com.badlogic.gdx.graphics.Camera camera;
-	private ShapeRenderer shapeRenderer;
+    private Viewport viewport;
+    private com.badlogic.gdx.graphics.Camera camera;
+    private ShapeRenderer shapeRenderer;
 
-	private final float WORLD_WIDTH = 640;
-	private final float WORLD_HEIGHT = 480;
+    private final float WORLD_WIDTH = 640;
+    private final float WORLD_HEIGHT = 480;
 
-	private final float floor = 10f;
+    private final float floor = 50f;
 
-	private Player player;
-	private CloudManager cloudManager;
+    private Player player;
+    private CloudManager cloudManager;
 
-	private Array<Obstacle> obstacleArray = new Array<Obstacle>();
+    private Array<Obstacle> obstacleArray = new Array<Obstacle>();
 
-    private final float MAX_OBSTACLES = 4;
-	private final float MIN_DISTANCE_BETWEEN_OBSTACLES = 200;
+    // private final float MAX_OBSTACLES = 5;
+    private final float MIN_DISTANCE_BETWEEN_OBSTACLES = 100;
 
     private GlyphLayout layout = new GlyphLayout();
     private BitmapFont bitmapFont;
 
     private float playTime;
 
-    private Destructable destructable;
+    private DestructableManager destructableManager;
 
-	private enum State {
+    private enum State {
         Playing,
         GameOver
     }
 
     private State currentGameState = State.Playing;
 
-	public RunnerGame() {
-	}
+    public RunnerGame() {
+    }
 
-	@Override
-	public void show () {
-		camera = new OrthographicCamera();
-		camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);
-		camera.update();
-		viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
+    @Override
+    public void show() {
+        camera = new OrthographicCamera();
+        camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);
 
-		shapeRenderer = new ShapeRenderer();
 
-		batch = new SpriteBatch();
+        camera.update();
+        viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
 
-		player = new Player(floor);
-		cloudManager = new CloudManager(WORLD_WIDTH, WORLD_HEIGHT);
+        shapeRenderer = new ShapeRenderer();
+
+        batch = new SpriteBatch();
+
+        player = new Player(floor);
+        cloudManager = new CloudManager(WORLD_WIDTH, WORLD_HEIGHT);
 
         bitmapFont = new BitmapFont();
 
-        destructable = new Destructable();
+        //destructableComponent = new DestructableComponent();
+        destructableManager = new DestructableManager(3);
 
-	}
+        Obstacle obs = new Obstacle(WORLD_WIDTH, floor);
+        obs.commission();
 
-	@Override
-	public void resize(int width, int height) {
-		viewport.update(width, height);
-	}
+        obstacleArray.add(obs);
 
-	@Override
-	public void render (float delta) {
+    }
 
-		update(delta);
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height);
+    }
 
-		clearScreen();
+    @Override
+    public void render(float delta) {
 
-		shapeRenderer.setProjectionMatrix(camera.projection);
-		shapeRenderer.setTransformMatrix(camera.view);
+        update(delta);
 
-		// do filled stuff
-		shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-		shapeRenderer.setColor(Color.GREEN);		// render the ground
-		shapeRenderer.rect(0, 0, WORLD_WIDTH, floor); // ground
+        clearScreen();
+
+        shapeRenderer.setProjectionMatrix(camera.projection);
+        shapeRenderer.setTransformMatrix(camera.view);
+
+        // do filled stuff
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.GREEN);        // render the ground
+        shapeRenderer.rect(0, 40, WORLD_WIDTH,  floor - 40); // ground
+
         cloudManager.renderDebug(shapeRenderer);
-        for (Obstacle obs : obstacleArray)
-        {
+        for (Obstacle obs : obstacleArray) {
             obs.renderDebug(shapeRenderer);
         }
 
 
-        destructable.renderDebug(shapeRenderer);
-		shapeRenderer.end();
+        destructableManager.renderDebug(shapeRenderer);
+        shapeRenderer.end();
 
-		// do line stuff
-		shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-		player.renderDebug(shapeRenderer);
-		shapeRenderer.end();
+        // do line stuff
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        player.renderDebug(shapeRenderer);
+        shapeRenderer.end();
 
         batch.setProjectionMatrix(camera.projection);
         batch.setTransformMatrix(camera.view);
         batch.begin();
-        String text = "Score: " + Integer.toString((int)playTime);
+        String text = "Score: " + Integer.toString((int) playTime);
         layout.setText(bitmapFont, text);
         bitmapFont.setColor(Color.CYAN);
-        bitmapFont.draw(batch, text, WORLD_WIDTH / 2 - layout.width /2, WORLD_HEIGHT /2);
+        bitmapFont.draw(batch, text, WORLD_WIDTH / 2 - layout.width / 2, WORLD_HEIGHT / 2);
 
         if (currentGameState == State.GameOver) {
             String go = "Game Over";
@@ -124,10 +134,12 @@ public class RunnerGame extends ScreenAdapter {
 
         batch.end();
 
-	}
+    }
 
-	private void update(float delta)
-	{
+
+    DestructableCollisionBlock block = new DestructableCollisionBlock();
+
+    private void update(float delta) {
         if (currentGameState == State.Playing) {
 
             playTime += delta;
@@ -138,87 +150,59 @@ public class RunnerGame extends ScreenAdapter {
                 obs.update(delta);
             }
 
+            checkForObstacleCollision();
             checkIfNewObstacleCanBeAdded();
             checkIsObstacleGoneOffScreen();
-            //checkForObstacleCollision();
 
-            destructable.update(delta);
+            //destructableComponent.update(delta);
+            destructableManager.update(delta);
+            destructableManager.checkIfOutOfScope();
+
+        } else if (currentGameState == State.GameOver) {
+
         }
-        else if (currentGameState == State.GameOver)
-        {
 
-        }
-
-	}
+    }
 
 
-	private void clearScreen() {
-		Gdx.gl.glClearColor(Color.BLACK.r, Color.BLACK.g, Color.BLACK.b, Color.BLACK.a);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-	}
+    private void clearScreen() {
+        Gdx.gl.glClearColor(Color.BLACK.r, Color.BLACK.g, Color.BLACK.b, Color.BLACK.a);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    }
 
-	private void checkIfNewObstacleCanBeAdded()
-	{
-        // add initial one
-        if (obstacleArray.size == 0)
-        {
-            Obstacle obs = new Obstacle(WORLD_WIDTH);
+    private void checkIfNewObstacleCanBeAdded() {
+        if (obstacleArray.get(obstacleArray.size - 1).getPosition().x < (WORLD_WIDTH - MIN_DISTANCE_BETWEEN_OBSTACLES)) {
+            Obstacle obs = new Obstacle(WORLD_WIDTH, floor);
             obs.commission();
 
             obstacleArray.add(obs);
         }
+    }
 
-
-        if (obstacleArray.size < MAX_OBSTACLES)
-        {
-            boolean okToAdd = false;
-
-            for (Obstacle obstacle : obstacleArray)
-            {
-                if (obstacle.getX() < (WORLD_WIDTH - MIN_DISTANCE_BETWEEN_OBSTACLES))
-                {
-                    okToAdd = true;
-                }
-                else
-                {
-                    okToAdd = false;
-                }
-            }
-
-            if (okToAdd)
-            {
-                Obstacle obs = new Obstacle(WORLD_WIDTH);
-                obs.commission();
-
-                obstacleArray.add(obs);
+    private void checkIsObstacleGoneOffScreen() {
+        for (Obstacle obs : obstacleArray) {
+            if (obs.getPosition().x < 0) {
+                obstacleArray.removeValue(obs, false);
             }
         }
+    }
 
+    private void checkForObstacleCollision() {
+        for (Obstacle obstacle : obstacleArray) {
+            if (player.getCollisionRectangle().overlaps(obstacle.getCollisionRectangle())) {
+                destructableManager.commissionADestructable(obstacle.getCollisionRectangle());
 
+                obstacleArray.removeValue(obstacle, false);
 
-	}
+                System.out.println(obstacleArray.size);
 
-	private void checkIsObstacleGoneOffScreen()
-	{
-		for (Obstacle obs : obstacleArray)
-		{
-            if (obs.getX() < 0)
-            {
-                obstacleArray.removeValue(obs, true);
-            }
-		}
-	}
+                for (DestructableCollisionBlock b : destructableManager.destructableBlockPool) {
 
-	private void checkForObstacleCollision()
-	{
-        for (Obstacle obstacle : obstacleArray)
-        {
-            if (player.getCollisionRectangle().overlaps(obstacle.getCollisionRectangle()))
-            {
-                // System.out.println("Hit");
-                // todo introduce lives
-                currentGameState = State.GameOver;
+                    System.out.println(b.isCommissioned());
+                }
+
+                break;
             }
         }
-	}
+    }
 }

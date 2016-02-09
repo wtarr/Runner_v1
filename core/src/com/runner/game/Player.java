@@ -12,10 +12,7 @@ import com.badlogic.gdx.math.Vector2;
  */
 public class Player {
 
-    //private float x = 30;
-    //private float y = 10;
-
-    private Vector2 position = new Vector2(30, 10);
+    private Vector2 position = new Vector2(60, 10);
 
     private float legAxa = position.x + 2;
     private float legBxa = position.x + 13;
@@ -26,10 +23,8 @@ public class Player {
     private float legA = legAxa;
     private float legB = legBxa;
 
-    private boolean canJump = true;
-    //private final float gravity = -300f;
+    private boolean jumping = false;
     private Vector2 gravity = new Vector2(0, -300f);
-    // private float yVelocity = 0;
     private Vector2 jumpVelocity = Vector2.Zero;
 
     private Rectangle collisionRectangle;
@@ -57,13 +52,10 @@ public class Player {
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE))
             jump();
 
-
-        jumpVelocity.mulAdd(gravity, delta);
-        position.mulAdd(jumpVelocity, delta);
-
-
-        //y += yVelocity * delta;
-        //yVelocity += gravity * delta;
+        if (jumping) {
+            jumpVelocity.mulAdd(gravity.cpy(), delta);
+            position.mulAdd(jumpVelocity.cpy(), delta);
+        }
 
         collisionRectangle.setY(position.y);
 
@@ -71,14 +63,14 @@ public class Player {
         {
             jumpVelocity = Vector2.Zero;
             position.y = floor;
-            canJump = true;
+            jumping = false;
         }
 
         currentTimer--;
 
         if (currentTimer <= 0)
         {
-            if (canJump) {
+            if (!jumping) {
                 if (legA == legAxa)
                     legA = legAxb;
                 else
@@ -124,10 +116,10 @@ public class Player {
     public void jump()
     {
         // System.out.println("jump");
-        if (canJump)
+        if (!jumping)
         {
             jumpVelocity = new Vector2(0, 200f);
-            canJump = false;
+            jumping = true;
         }
 
 
