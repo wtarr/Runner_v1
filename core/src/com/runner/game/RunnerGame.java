@@ -10,6 +10,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -27,6 +29,8 @@ public class RunnerGame extends ScreenAdapter {
 
     private final float WORLD_WIDTH = 640;
     private final float WORLD_HEIGHT = 480;
+
+    private Vector2 originalCamPos = new Vector2(WORLD_WIDTH/2, WORLD_HEIGHT/2);
 
     private final float floor = 50f;
 
@@ -58,7 +62,7 @@ public class RunnerGame extends ScreenAdapter {
     @Override
     public void show() {
         camera = new OrthographicCamera();
-        camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);
+        camera.position.set(originalCamPos.x, originalCamPos.y, 0);
 
 
         camera.update();
@@ -158,6 +162,8 @@ public class RunnerGame extends ScreenAdapter {
             destructableManager.update(delta);
             destructableManager.checkIfOutOfScope();
 
+            cameraShake(delta);
+
         } else if (currentGameState == State.GameOver) {
 
         }
@@ -194,15 +200,50 @@ public class RunnerGame extends ScreenAdapter {
 
                 obstacleArray.removeValue(obstacle, false);
 
-                System.out.println(obstacleArray.size);
+                shake = 10f;
 
-                for (DestructableCollisionBlock b : destructableManager.destructableBlockPool) {
-
-                    System.out.println(b.isCommissioned());
-                }
+//                System.out.println(obstacleArray.size);
+//
+//                for (DestructableCollisionBlock b : destructableManager.destructableBlockPool) {
+//
+//                    System.out.println(b.isCommissioned());
+//                }
 
                 break;
             }
         }
+    }
+
+    private float shake = 0f;
+    private float decreaseFactor = 9f;
+
+    // https://gist.github.com/ftvs/5822103
+    private void cameraShake(float delta) {
+        if (shake > 0)
+        {
+            Vector2 newCamPos = originalCamPos.cpy().add(randomInsideUnitCircle().scl(shake));
+
+            shake -= delta * decreaseFactor;
+
+            camera.position.set(newCamPos.x, newCamPos.y, 0);
+            camera.update();
+        }
+        else
+        {
+            shake = 0;
+            camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);
+            camera.update();
+        }
+    }
+
+    // http://stackoverflow.com/a/5838055
+    private Vector2 randomInsideUnitCircle()
+    {
+        double t = 2 * 3.14 * MathUtils.random();
+        //double u = MathUtils.random() + MathUtils.random();
+        //double r =  u > 1 ? 2 - u : u;
+
+        double r = Math.sqrt(MathUtils.random());
+        return new Vector2( (float)(r * Math.cos(t)), (float)(r*Math.sin(t)));
     }
 }
