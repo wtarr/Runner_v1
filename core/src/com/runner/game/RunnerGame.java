@@ -1,6 +1,7 @@
 package com.runner.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -11,7 +12,9 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -25,6 +28,10 @@ public class RunnerGame extends ScreenAdapter {
 
     private Viewport viewport;
     private com.badlogic.gdx.graphics.Camera camera;
+    private com.badlogic.gdx.graphics.Camera yFlippedCameraProjection;
+
+    private boolean flipped;
+
     private ShapeRenderer shapeRenderer;
 
     private final float WORLD_WIDTH = 640;
@@ -97,9 +104,29 @@ public class RunnerGame extends ScreenAdapter {
 
         update(delta);
 
+
+
+
+        Matrix4 m;
+        if (flipped) {
+            m = camera.projection.cpy().mul(new Matrix4(new float[]{
+                    1, 0 , 0, 0,
+                    0, 1, 0, 0,
+                    0, 0,  1, 0,
+                    0, 0,  0, 1}));
+        }
+        else
+        {
+            m = camera.projection.cpy().mul(new Matrix4(new float[]{
+                    -1, 0 , 0, 0,
+                    0, 1, 0, 0,
+                    0, 0,  1, 0,
+                    0, 0,  0, 1}));
+        }
+
         clearScreen();
 
-        shapeRenderer.setProjectionMatrix(camera.projection);
+        shapeRenderer.setProjectionMatrix(m);
         shapeRenderer.setTransformMatrix(camera.view);
 
         // do filled stuff
@@ -112,7 +139,6 @@ public class RunnerGame extends ScreenAdapter {
             obs.renderDebug(shapeRenderer);
         }
 
-
         destructableManager.renderDebug(shapeRenderer);
         shapeRenderer.end();
 
@@ -121,7 +147,7 @@ public class RunnerGame extends ScreenAdapter {
         player.renderDebug(shapeRenderer);
         shapeRenderer.end();
 
-        batch.setProjectionMatrix(camera.projection);
+        batch.setProjectionMatrix(m);
         batch.setTransformMatrix(camera.view);
         batch.begin();
         String text = "Score: " + Integer.toString((int) playTime);
@@ -166,6 +192,14 @@ public class RunnerGame extends ScreenAdapter {
 
         } else if (currentGameState == State.GameOver) {
 
+        }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.F))
+        {
+            if (!flipped)
+                flipped = true;
+            else
+                flipped = false;
         }
 
     }
