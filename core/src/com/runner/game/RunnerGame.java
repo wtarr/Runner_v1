@@ -45,9 +45,11 @@ public class RunnerGame extends ScreenAdapter {
     private CloudManager cloudManager;
 
     private Array<Obstacle> obstacleArray = new Array<Obstacle>();
+    private Array<PickUp> pickUpArray = new Array<PickUp>();
 
     // private final float MAX_OBSTACLES = 5;
-    private final float MIN_DISTANCE_BETWEEN_OBSTACLES = 100;
+    private final float MIN_DISTANCE_BETWEEN_OBSTACLES = 100; // reduce to increase difficulty
+    private Vector2 obstacleVelocity = new Vector2(-100, 0); // scale to increase difficulty
 
     private GlyphLayout layout = new GlyphLayout();
     private BitmapFont bitmapFont;
@@ -55,6 +57,10 @@ public class RunnerGame extends ScreenAdapter {
     private float playTime;
 
     private DestructableManager destructableManager;
+
+    private int obstacleCount;
+    private int nextPickup;
+    private int min = 5, max = 10;
 
     private enum State {
         Playing,
@@ -87,11 +93,12 @@ public class RunnerGame extends ScreenAdapter {
         //destructableComponent = new DestructableComponent();
         destructableManager = new DestructableManager(3);
 
-        Obstacle obs = new Obstacle(WORLD_WIDTH, floor);
+        Obstacle obs = new Obstacle(WORLD_WIDTH, floor, obstacleVelocity);
         obs.commission();
 
         obstacleArray.add(obs);
-
+        obstacleCount++;
+        nextPickup += MathUtils.random(min, max);
     }
 
     @Override
@@ -104,11 +111,8 @@ public class RunnerGame extends ScreenAdapter {
 
         update(delta);
 
-
-
-
         Matrix4 m;
-        if (flipped) {
+        if (!flipped) {
             m = camera.projection.cpy().mul(new Matrix4(new float[]{
                     1, 0 , 0, 0,
                     0, 1, 0, 0,
@@ -140,6 +144,12 @@ public class RunnerGame extends ScreenAdapter {
         }
 
         destructableManager.renderDebug(shapeRenderer);
+
+        for (PickUp p : pickUpArray)
+        {
+            p.renderDebug(shapeRenderer);
+        }
+
         shapeRenderer.end();
 
         // do line stuff
@@ -167,8 +177,6 @@ public class RunnerGame extends ScreenAdapter {
     }
 
 
-    DestructableCollisionBlock block = new DestructableCollisionBlock();
-
     private void update(float delta) {
         if (currentGameState == State.Playing) {
 
@@ -180,9 +188,16 @@ public class RunnerGame extends ScreenAdapter {
                 obs.update(delta);
             }
 
+            for (PickUp pickUp : pickUpArray)
+            {
+                pickUp.update(delta);
+            }
+
             checkForObstacleCollision();
             checkIfNewObstacleCanBeAdded();
             checkIsObstacleGoneOffScreen();
+            checkIfNewPickupCanBePlaced();
+            checkForPickupCollision();
 
             //destructableComponent.update(delta);
             destructableManager.update(delta);
@@ -212,11 +227,29 @@ public class RunnerGame extends ScreenAdapter {
 
     private void checkIfNewObstacleCanBeAdded() {
         if (obstacleArray.get(obstacleArray.size - 1).getPosition().x < (WORLD_WIDTH - MIN_DISTANCE_BETWEEN_OBSTACLES)) {
-            Obstacle obs = new Obstacle(WORLD_WIDTH, floor);
+            Obstacle obs = new Obstacle(WORLD_WIDTH, floor, obstacleVelocity);
             obs.commission();
 
             obstacleArray.add(obs);
+            obstacleCount++;
+
         }
+    }
+
+    private void checkIfNewPickupCanBePlaced()
+    {
+        if (obstacleCount > nextPickup)
+        {
+            // todo place pickup
+            // get last item in current obstacle array
+            Obstacle o = obstacleArray.get(obstacleArray.size-1);
+
+            PickUp p = new PickUp(new Vector2(o.getPosition().x + MIN_DISTANCE_BETWEEN_OBSTACLES/2 + o.getCollisionRectangle().width, o.getPosition().y), o.getVelocity());
+            pickUpArray.add(p);
+            nextPickup += MathUtils.random(min, max);
+        }
+
+
     }
 
     private void checkIsObstacleGoneOffScreen() {
@@ -236,12 +269,21 @@ public class RunnerGame extends ScreenAdapter {
 
                 shake = 10f;
 
-//                System.out.println(obstacleArray.size);
-//
-//                for (DestructableCollisionBlock b : destructableManager.destructableBlockPool) {
-//
-//                    System.out.println(b.isCommissioned());
-//                }
+                break;
+            }
+        }
+    }
+
+    private void checkForPickupCollision() {
+        for (PickUp p : pickUpArray) {
+            if (player.getCollisionRectangle().overlaps(p.getCollisionRectangle())) {
+
+                pickUpArray.removeValue(p, false);
+
+                if (flipped)
+                    flipped = false;
+                else
+                    flipped = true;
 
                 break;
             }
@@ -253,6 +295,7 @@ public class RunnerGame extends ScreenAdapter {
 
     // https://gist.github.com/ftvs/5822103
     private void cameraShake(float delta) {
+        if (shake == 0 ) return;
         if (shake > 0)
         {
             Vector2 newCamPos = originalCamPos.cpy().add(randomInsideUnitCircle().scl(shake));

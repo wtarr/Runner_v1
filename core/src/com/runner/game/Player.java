@@ -3,6 +3,7 @@ package com.runner.game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -10,7 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 /**
  * Created by William on 06/02/2016.
  */
-public class Player {
+public class  Player implements IGameObject {
 
     private Vector2 position = new Vector2(60, 10);
 
@@ -85,6 +86,11 @@ public class Player {
                 currentTimer = timerElapse;
             }
         }
+
+    }
+
+    @Override
+    public void render(SpriteBatch batch) {
 
     }
 

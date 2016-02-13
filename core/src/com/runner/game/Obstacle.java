@@ -1,6 +1,7 @@
 package com.runner.game;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
@@ -9,7 +10,7 @@ import com.badlogic.gdx.math.Vector2;
 /**
  * Created by William on 06/02/2016.
  */
-public class Obstacle {
+public class Obstacle implements IGameObject {
 
     // private float x = 0;
     // private float y = 10;
@@ -27,14 +28,18 @@ public class Obstacle {
 
     private Rectangle collisionRectangle;
 
-    // private float xVelocity =  -100;
-    private Vector2 velocity = new Vector2(-100, 0);
+    private Vector2 velocity;
+
+    public Vector2 getVelocity() {
+        return velocity;
+    }
 
     private float worldWidth;
 
-    public Obstacle(float worldWidth, float floor) {
+    public Obstacle(float worldWidth, float floor, Vector2 velocity) {
         this.worldWidth = worldWidth;
         this.floorHeight = floor;
+        this.velocity = velocity;
         height = MathUtils.random(30, 60);
         commission();
     }
@@ -51,6 +56,11 @@ public class Obstacle {
             //x += xVelocity * delta;
             collisionRectangle.setX(position.x);
         //}
+    }
+
+    @Override
+    public void render(SpriteBatch batch) {
+
     }
 
     public void render()

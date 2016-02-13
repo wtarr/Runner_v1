@@ -2,12 +2,13 @@ package com.runner.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 
-public class DestructableComponent extends AbstractDestructable {
+public class DestructableComponent extends AbstractDestructable implements IGameObject{
 
     private Vector2 position; // always bottom left of rectangle
 
@@ -89,6 +90,11 @@ public class DestructableComponent extends AbstractDestructable {
 
             boundingRectangle.setCenter(position);
         }
+    }
+
+    @Override
+    public void render(SpriteBatch batch) {
+
     }
 
     public void renderDebug(ShapeRenderer shapeRenderer)

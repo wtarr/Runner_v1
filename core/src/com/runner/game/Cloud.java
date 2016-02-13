@@ -1,10 +1,11 @@
 package com.runner.game;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 
-public class Cloud
+public class Cloud implements IGameObject
 {
     public float getX() {
         return x;
@@ -36,6 +37,11 @@ public class Cloud
         if (isEnabled) {
             x += yVelocity * delta;
         }
+    }
+
+    @Override
+    public void render(SpriteBatch batch) {
+
     }
 
     public void renderDebug(ShapeRenderer shapeRenderer)

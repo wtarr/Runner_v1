@@ -1,12 +1,13 @@
 package com.runner.game;
 
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
 /**
  * Created by William on 09/02/2016.
  */
-public class DestructableCollisionBlock {
+public class DestructableCollisionBlock implements IGameObject {
 
     private boolean commissioned;
 
@@ -47,6 +48,11 @@ public class DestructableCollisionBlock {
             tl.update(delta);
             tr.update(delta);
         }
+    }
+
+    @Override
+    public void render(SpriteBatch batch) {
+
     }
 
     public void renderDebug(ShapeRenderer shapeRenderer) {

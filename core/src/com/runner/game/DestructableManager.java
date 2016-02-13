@@ -15,10 +15,10 @@ public class DestructableManager {
         TopRight
     };
 
-    public Array<DestructableCollisionBlock> destructableBlockPool;
+    public Array<IGameObject> destructableBlockPool;
 
     public DestructableManager(int poolSize) {
-        destructableBlockPool = new Array<DestructableCollisionBlock>();
+        destructableBlockPool = new Array<IGameObject>();
 
         for (int i = 0; i < poolSize; i++)
         {
@@ -29,11 +29,13 @@ public class DestructableManager {
 
     public void commissionADestructable(Rectangle collisionRect)
     {
-        for (DestructableCollisionBlock block : destructableBlockPool)
+        for (IGameObject block : destructableBlockPool)
         {
-            if (!block.isCommissioned())
+            DestructableCollisionBlock item = (DestructableCollisionBlock)block;
+
+            if (!item.isCommissioned())
             {
-                block.CommissionDestructable(collisionRect);
+                item.CommissionDestructable(collisionRect);
                 break;
             }
         }
@@ -41,7 +43,7 @@ public class DestructableManager {
 
     public void update(float delta)
     {
-        for (DestructableCollisionBlock block : destructableBlockPool)
+        for (IGameObject block : destructableBlockPool)
         {
             block.update(delta);
         }
@@ -49,7 +51,7 @@ public class DestructableManager {
 
     public void renderDebug(ShapeRenderer shapeRenderer)
     {
-        for (DestructableCollisionBlock block : destructableBlockPool)
+        for (IGameObject block : destructableBlockPool)
         {
             block.renderDebug(shapeRenderer);
         }
@@ -57,9 +59,11 @@ public class DestructableManager {
 
     public void checkIfOutOfScope()
     {
-        for (DestructableCollisionBlock block : destructableBlockPool)
+        for (IGameObject block : destructableBlockPool)
         {
-            block.CheckIfOutOfCommission();
+            DestructableCollisionBlock item = (DestructableCollisionBlock)block;
+
+            item.CheckIfOutOfCommission();
             // todo
 
         }
