@@ -40,7 +40,7 @@ public class Obstacle implements IGameObject {
         this.worldWidth = worldWidth;
         this.floorHeight = floor;
         this.velocity = velocity;
-        height = MathUtils.random(30, 60);
+        height = MathUtils.random(30, 55);
         commission();
     }
 

@@ -46,10 +46,13 @@ public class RunnerGame extends ScreenAdapter {
 
     private Array<Obstacle> obstacleArray = new Array<Obstacle>();
     private Array<PickUp> pickUpArray = new Array<PickUp>();
+    private byte[] pickUpDist = new byte[10];
 
     // private final float MAX_OBSTACLES = 5;
-    private final float MIN_DISTANCE_BETWEEN_OBSTACLES = 100; // reduce to increase difficulty
+    private final float MIN_DISTANCE_BETWEEN_OBSTACLES = 150; // reduce to increase difficulty
     private Vector2 obstacleVelocity = new Vector2(-100, 0); // scale to increase difficulty
+    private int nextVelocityIncrease = 15;
+    private int velocityIncrease = 10;
 
     private GlyphLayout layout = new GlyphLayout();
     private BitmapFont bitmapFont;
@@ -59,6 +62,7 @@ public class RunnerGame extends ScreenAdapter {
     private DestructableManager destructableManager;
 
     private int obstacleCount;
+
     private int nextPickup;
     private int min = 5, max = 10;
 
@@ -66,6 +70,8 @@ public class RunnerGame extends ScreenAdapter {
         Playing,
         GameOver
     }
+
+    private int playerLives = 3;
 
     private State currentGameState = State.Playing;
 
@@ -99,6 +105,18 @@ public class RunnerGame extends ScreenAdapter {
         obstacleArray.add(obs);
         obstacleCount++;
         nextPickup += MathUtils.random(min, max);
+
+        pickUpDist[0] = 1;
+        pickUpDist[1] = 1;
+        pickUpDist[2] = 1;
+        pickUpDist[3] = 1;
+        pickUpDist[4] = 0;
+        pickUpDist[5] = 0;
+        pickUpDist[6] = 0;
+        pickUpDist[7] = 0;
+        pickUpDist[8] = 0;
+        pickUpDist[9] = 0;
+
     }
 
     @Override
@@ -114,18 +132,18 @@ public class RunnerGame extends ScreenAdapter {
         Matrix4 m;
         if (!flipped) {
             m = camera.projection.cpy().mul(new Matrix4(new float[]{
-                    1, 0 , 0, 0,
+                    1, 0, 0, 0,
                     0, 1, 0, 0,
-                    0, 0,  1, 0,
-                    0, 0,  0, 1}));
+                    0, 0, 1, 0,
+                    0, 0, 0, 1}));
         }
         else
         {
             m = camera.projection.cpy().mul(new Matrix4(new float[]{
-                    -1, 0 , 0, 0,
-                    0, 1, 0, 0,
-                    0, 0,  1, 0,
-                    0, 0,  0, 1}));
+                    -1, 0, 0, 0,
+                     0, 1, 0, 0,
+                     0, 0, 1, 0,
+                     0, 0, 0, 1}));
         }
 
         clearScreen();
@@ -160,18 +178,23 @@ public class RunnerGame extends ScreenAdapter {
         batch.setProjectionMatrix(m);
         batch.setTransformMatrix(camera.view);
         batch.begin();
-        String text = "Score: " + Integer.toString((int) playTime);
-        layout.setText(bitmapFont, text);
+        String s = "Lives: " + playerLives + "  Score: " + Integer.toString((int)playTime);
+        // String text = "Score: " + Integer.toString((int) playTime);
+        layout.setText(bitmapFont, s);
         bitmapFont.setColor(Color.CYAN);
-        bitmapFont.draw(batch, text, WORLD_WIDTH / 2 - layout.width / 2, WORLD_HEIGHT / 2);
+        bitmapFont.draw(batch, s, WORLD_WIDTH / 2 - layout.width / 2, WORLD_HEIGHT / 2);
 
         if (currentGameState == State.GameOver) {
             String go = "Game Over";
-            layout.setText(bitmapFont, text);
+            layout.setText(bitmapFont, go);
             bitmapFont.setColor(Color.RED);
             bitmapFont.draw(batch, go, WORLD_WIDTH / 2 - layout.width / 2, WORLD_HEIGHT / 2 - 30);
         }
 
+        for (PickUp p : pickUpArray)
+        {
+            p.render(batch);
+        }
         batch.end();
 
     }
@@ -202,6 +225,7 @@ public class RunnerGame extends ScreenAdapter {
             //destructableComponent.update(delta);
             destructableManager.update(delta);
             destructableManager.checkIfOutOfScope();
+            checkIfObstacleVelocityIncreaseDue();
 
             cameraShake(delta);
 
@@ -217,6 +241,14 @@ public class RunnerGame extends ScreenAdapter {
                 flipped = false;
         }
 
+    }
+
+    private void checkIfObstacleVelocityIncreaseDue() {
+        if (playTime > nextVelocityIncrease)
+        {
+            obstacleVelocity = new Vector2((Math.abs(obstacleVelocity.x) + velocityIncrease) * -1, 0);
+            nextVelocityIncrease += 20;
+        }
     }
 
 
@@ -244,7 +276,19 @@ public class RunnerGame extends ScreenAdapter {
             // get last item in current obstacle array
             Obstacle o = obstacleArray.get(obstacleArray.size-1);
 
-            PickUp p = new PickUp(new Vector2(o.getPosition().x + MIN_DISTANCE_BETWEEN_OBSTACLES/2 + o.getCollisionRectangle().width, o.getPosition().y), o.getVelocity());
+            int ran = MathUtils.random(9);
+            int select = pickUpDist[ran];
+            PickUp.Contents content;
+            if (select == 1)
+            {
+                content = PickUp.Contents.Life;
+            }
+            else
+            {
+                content = PickUp.Contents.Flip;
+            }
+
+            PickUp p = new PickUp(new Vector2(o.getPosition().x + MIN_DISTANCE_BETWEEN_OBSTACLES/2 + o.getCollisionRectangle().width, o.getPosition().y), o.getVelocity(), content);
             pickUpArray.add(p);
             nextPickup += MathUtils.random(min, max);
         }
@@ -269,6 +313,13 @@ public class RunnerGame extends ScreenAdapter {
 
                 shake = 10f;
 
+                playerLives--;
+
+                if (playerLives <= 0)
+                {
+                    currentGameState = State.GameOver;
+                }
+
                 break;
             }
         }
@@ -278,12 +329,19 @@ public class RunnerGame extends ScreenAdapter {
         for (PickUp p : pickUpArray) {
             if (player.getCollisionRectangle().overlaps(p.getCollisionRectangle())) {
 
-                pickUpArray.removeValue(p, false);
-
-                if (flipped)
-                    flipped = false;
+                if (p.getContent() == PickUp.Contents.Flip)
+                {
+                    if (flipped)
+                        flipped = false;
+                    else
+                        flipped = true;
+                }
                 else
-                    flipped = true;
+                {
+                      playerLives++;
+                }
+
+                pickUpArray.removeValue(p, false);
 
                 break;
             }
